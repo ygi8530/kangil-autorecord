@@ -1,4 +1,4 @@
-pluginManagement {
+﻿pluginManagement {
     repositories {
         google()
         mavenCentral()
@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "watch-recorder"
-include(":wear")
+include(":wear", ":mobile")

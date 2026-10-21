@@ -51,6 +51,7 @@ class RecorderService : Service() {
 
     private fun start(path: String) {
         if (recorder != null) return
+        recoverOrphans()
         relativePath = path
         try {
             startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
@@ -88,11 +89,12 @@ class RecorderService : Service() {
         }
         release()
         if (file != null && file.length() > 0) {
-            val uri = publish(file)
-            if (uri != null) {
+            val saved = publish(file, relativePath)
+            if (saved != null) {
                 vibrate(longArrayOf(0, 80, 120, 80))
-                Log.i(TAG, "saved uri=$uri path=$relativePath size=${file.length()}")
+                Log.i(TAG, "saved uri=${saved.uri} path=$relativePath size=${file.length()}")
                 file.delete()
+                enqueueForPhone(saved)
             } else {
                 fail("저장 실패 (임시 파일 보존됨)")
             }
@@ -101,7 +103,30 @@ class RecorderService : Service() {
         stopSelf()
     }
 
-    private fun publish(file: File): android.net.Uri? {
+    /**
+     * A recording interrupted by process death leaves its ADTS temp file behind (still playable).
+     * Save those before starting a new recording so nothing is lost and they get synced too.
+     */
+    private fun recoverOrphans() {
+        filesDir.listFiles { f -> f.extension == "aac" && f.length() > 0 }?.forEach { orphan ->
+            val saved = publish(orphan, DEFAULT_RELATIVE_PATH)
+            if (saved != null) {
+                Log.i(TAG, "recovered interrupted recording ${orphan.name} → ${saved.uri}")
+                orphan.delete()
+                enqueueForPhone(saved)
+                Toast.makeText(this, "중단된 녹음을 저장했어요", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun enqueueForPhone(saved: Saved) {
+        SyncQueue.add(this, SyncQueue.Item(saved.name.substringBeforeLast('.'), saved.uri, saved.name, saved.size, 0))
+        SyncJobService.scheduleNow(this)
+    }
+
+    private data class Saved(val uri: android.net.Uri, val name: String, val size: Long)
+
+    private fun publish(file: File, relativePath: String): Saved? {
         val m4a = File(cacheDir, file.nameWithoutExtension + ".m4a")
         val output = try {
             remuxToM4a(file, m4a)
@@ -123,7 +148,7 @@ class RecorderService : Service() {
             values.clear()
             values.put(MediaStore.Audio.Media.IS_PENDING, 0)
             contentResolver.update(uri, values, null, null)
-            uri
+            Saved(uri, output.name, output.length())
         } catch (e: Exception) {
             Log.e(TAG, "publish failed", e)
             null

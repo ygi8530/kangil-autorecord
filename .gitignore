@@ -2,3 +2,7 @@
 build/
 local.properties
 *.apk
+
+# raw device logs may contain personal data (notifications etc.)
+docs/raw/
+!dist/*.apk

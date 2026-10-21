@@ -2,8 +2,11 @@
 # V1/V2: device info + public (exported) interfaces of Samsung Voice Recorder on the watch.
 # Read-only: inspects package metadata only. Usage: scripts/verify_samsung_recorder.sh [adb-serial]
 set -u
-ADB=(~/Android/Sdk/platform-tools/adb ${1:+-s "$1"})
-AAPT2=$(ls -d ~/Android/Sdk/build-tools/*/aapt2 | tail -1)
+# SDK: $ANDROID_HOME, else Linux default, else Windows default (Git Bash)
+SDK=${ANDROID_HOME:-$HOME/Android/Sdk}
+[ -d "$SDK" ] || SDK="$HOME/AppData/Local/Android/Sdk"
+ADB=("$SDK/platform-tools/adb" ${1:+-s "$1"})
+AAPT2=$(ls -d "$SDK"/build-tools/*/aapt2* | tail -1)
 OUT=docs/raw; mkdir -p "$OUT"
 
 echo "== V1 device"
