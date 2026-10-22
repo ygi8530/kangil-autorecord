@@ -136,4 +136,12 @@
 - 조건: 워치 Wi-Fi OFF + 폰 BT OFF 상태에서 녹음 `rec_20261022_222135` (22:21:35 시작) → 폰 BT ON
 - 폰 logcat: `22:21:49.584 PUT /global/bluetooth_on` → `22:21:58.517 saved rec_20261022_222135.m4a (41513B)` → `acked`
 - **결과: 통과. BT를 켠 뒤 약 9초 만에 수신** (워치 0.3의 ~8분 지연 해소 확인)
-- 관찰: `22:22:08 rec_20261022_222135.m4a already saved, re-acking` — 같은 파일이 10초 뒤 한 번 더 도착. 폰이 중복 저장을 막아 결과엔 영향 없음. 워치 로그를 못 봐서(BT 연결 중이라 워치 ADB 불가) 원인 미확정 — 첫 ack가 연결 직후 유실돼 재전송됐거나 오프라인 중 예약된 job이 뒤늦게 실행된 것으로 추정. 다음 세션에서 워치 logcat으로 확인
+- 관찰: `22:22:08 rec_20261022_222135.m4a already saved, re-acking` — 같은 파일이 10초 뒤 한 번 더 도착. 폰이 중복 저장을 막아 결과엔 영향 없음. 워치 logcat으로 확인 →
+  ```
+  22:21:41.652 saved ... size=41017                       (오프라인, 전송 대기)
+  22:21:57.590 sync: sent rec_20261022_222135.m4a ...      ← 워치 전송은 1회뿐
+  22:22:00.722 phone reachable again (1 node), syncing     ← sentAt 5분 이내라 재전송 안 함
+  22:22:16.621 ack ...: saved on phone, deleted from watch (rows=1)
+  22:22:16.622 ack for unknown id=rec_20261022_222135 (already handled)
+  ```
+  **워치는 1회 전송, 폰에는 2회 도착** → BT가 막 붙는 순간 Data Layer가 같은 채널을 두 경로(BT·클라우드)로 전달한 것으로 판단. 앱 버그 아님. 폰 중복 방지(`already saved`)와 워치 ack 중복 무시(`already handled`)로 결과 정상, 워치 삭제도 1회. ack는 폰 송신 후 ~18초 지연 도착
