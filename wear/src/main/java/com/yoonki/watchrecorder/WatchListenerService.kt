@@ -21,7 +21,9 @@ class WatchListenerService : WearableListenerService() {
     override fun onCapabilityChanged(info: CapabilityInfo) {
         if (info.name == SyncProtocol.PHONE_CAPABILITY && info.nodes.isNotEmpty()) {
             Log.i(TAG, "phone reachable again (${info.nodes.size} node), syncing")
-            SyncJobService.scheduleNow(this)
+            // Sync right here instead of scheduling a job: while the watch dozes, JobScheduler deferred the job
+            // ~8 minutes in testing. Listener callbacks already run on a background thread, so blocking is fine.
+            SyncJobService.runSync(this)
         }
     }
 

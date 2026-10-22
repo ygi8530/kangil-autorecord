@@ -19,7 +19,7 @@ Galaxy Watch에서 **홈 키 두 번 = 녹음 시작, 다시 두 번 = 저장**.
 
 | 파일 | 설치 대상 |
 |---|---|
-| `dist/quickrec-watch.apk` | 워치 (0.3) |
+| `dist/quickrec-watch.apk` | 워치 (0.3.1) |
 | `dist/quickrec-phone.apk` | 폰 (0.4.1) |
 
 > ⚠️ **워치 앱과 폰 앱은 반드시 같은 빌드(같은 서명)여야 서로 통신합니다.** 한쪽만 직접 빌드해서 설치하면 전송이 안 됩니다.

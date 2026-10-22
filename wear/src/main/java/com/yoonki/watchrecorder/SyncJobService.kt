@@ -13,6 +13,7 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 /**
@@ -24,14 +25,8 @@ class SyncJobService : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         thread(name = "sync") {
-            try {
-                syncAll(this)
-            } catch (e: Exception) {
-                Log.w(TAG, "sync failed: $e")
-            } finally {
-                schedulePeriodicIfNeeded(this)
-                jobFinished(params, false)
-            }
+            runSync(this)
+            jobFinished(params, false)
         }
         return true
     }
@@ -40,6 +35,27 @@ class SyncJobService : JobService() {
 
     companion object {
         private const val TAG = "WatchRecorder"
+        private val running = AtomicBoolean(false)
+
+        /**
+         * One sync at a time: the immediate job, the periodic job and a reconnect event can fire together,
+         * which used to send the same file twice. A caller that finds a sync in progress just returns —
+         * the running pass reads the queue fresh and covers its items.
+         */
+        fun runSync(context: Context) {
+            if (!running.compareAndSet(false, true)) {
+                Log.i(TAG, "sync already running, skipping")
+                return
+            }
+            try {
+                syncAll(context)
+            } catch (e: Exception) {
+                Log.w(TAG, "sync failed: $e")
+            } finally {
+                running.set(false)
+                schedulePeriodicIfNeeded(context)
+            }
+        }
         private const val JOB_NOW = 1
         private const val JOB_PERIODIC = 2
         private const val RESEND_AFTER_MS = 5 * 60 * 1000L

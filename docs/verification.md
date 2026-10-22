@@ -114,3 +114,18 @@
   ```
 - 사용자 확인: 연결 상태 녹음 즉시 수신, **폰 블루투스 끈 상태에서 녹음 → 다시 켜자 자동 수신** (대기열 → 재연결 즉시 전송 동작)
 - 미검증: "폰에 저장되면 워치에서 삭제" 토글 (HANDOFF 다음 할 일 1)
+
+## 동기화·삭제 토글 재검증 (2026-10-22 밤, 워치 0.3 → 0.3.1, 폰 0.4.1)
+- 폰 0.4 버그: R8이 `android_wear_capabilities`를 지워 워치가 폰을 못 찾음 → 워치 로그 `sync: phone not reachable, 1→2→3 queued`(21:54~21:55). 0.4.1 설치 후 대기열 3건 22:11:58 일괄 수신 (`saved → acked`)
+- **"폰에 저장되면 워치에서 삭제" 토글 통과** (워치 logcat):
+  ```
+  22:11:58 ack rec_20261022_215439.m4a: saved on phone, kept on watch      ← 토글 OFF
+  22:12:10 settings: deleteAfterSync=true                                  ← 폰에서 토글 ON → 워치로 전달
+  22:12:16 ack rec_20261022_221212.m4a: saved on phone, deleted from watch (rows=1)
+  22:12:34 ack rec_20261022_221232.m4a: saved on phone, deleted from watch (rows=1)
+  ```
+  워치 `ls /sdcard/Recordings/WatchRecorder/`: 221212·221232 없음, 그 이전 파일은 남아 있음
+- 발견 1: 재연결 감지(`phone reachable again 22:04:06`) 후 실제 전송은 22:11:57 — JobScheduler 작업이 워치 doze 중 ~8분 지연
+- 발견 2: 같은 파일 2회 전송(즉시 job + 15분 주기 job 동시 실행) → 폰이 `already saved, re-acking`으로 중복 저장은 막음
+- 0.3.1 수정: 재연결 이벤트에서 job 예약 대신 즉시 전송, `AtomicBoolean`으로 동시 실행 1개 제한
+- 0.3.1 확인: 폰 BT 끈 상태에서 녹음(`rec_20261022_221724`, 22:17:24 시작) → BT 켬 → 폰 `22:17:34 saved → acked` 1회만 수신(중복 없음). 녹음 시작부터 10초 이내 도착

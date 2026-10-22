@@ -13,9 +13,10 @@ HANDOFF의 '다음 할 일' 순서대로 진행하고 검증 결과는 docs/veri
   - 삼성 Voice Recorder 경유는 불가 확정 (T0: 홈 키 2번 = 삼성 앱 화면만 열림 / S2: 외부 파일 인식·동기화 안 함)
   - Wearable Data Layer로 워치→폰 전송, 끊김 시 대기열 보관 후 재연결 즉시 전송, 폰 저장·크기 확인 후 ack
 - 폰 앱 0.4: iOS 스타일(kangil-train 앱과 같은 inset grouped 디자인) 보관함 — 날짜별/월별/즐겨찾기, 검색, 인라인 재생(속도·10초 이동), 이름·메모·공유·열기·삭제, 오늘 녹음 강조, 당겨서 새로고침, 여러 개 선택(길게 누르기·전체 선택 → 일괄 즐겨찾기·공유·삭제), 설정(워치에서 삭제 토글), 빨강~주황 앱 아이콘(어두운/나무 테마에서 잘 보이게)
-- 버전: 워치 0.3 (versionCode 3), 폰 0.4.1 (versionCode 5). 설치본: `dist/` (R8 축소 release 빌드, debug 키 서명)
+- 버전: 워치 0.3.1 (versionCode 4), 폰 0.4.1 (versionCode 5). 설치본: `dist/` (R8 축소 release 빌드, debug 키 서명)
 - 수정 이력: 폰 0.3 삭제 시 크래시 — `createDeleteRequest`에 generic `content://media/external/...` URI를 넘겨 `Invalid Uri`. VOLUME_NAME으로 볼륨별 URI(`external_primary`)를 만들도록 수정, 삭제 실패는 Toast로 처리
 - 폰 0.4 전송 불가 버그: R8 리소스 축소가 `android_wear_capabilities`를 미사용으로 지워 폰이 `watchrecorder_phone` capability를 광고하지 않음 → 워치가 폰을 못 찾고 대기열에만 쌓음. `tools:keep`은 values 파일에선 무시됨 → `res/raw/keep.xml`로 옮겨 해결(0.4.1). release 빌드 후 `aapt2 dump resources ... | grep android_wear_capabilities`로 확인할 것
+- 워치 0.3.1: 재연결 시 즉시 전송(doze 중 job 지연 회피), 동시 sync 1개 제한(중복 전송 제거)
 
 ## 2. 구조
 ```
@@ -55,7 +56,7 @@ mobile/ (폰, minSdk 29, Jetpack Compose + Material3 + play-services-wearable)
 - 원본 로그(`docs/raw/`)는 기기 전체 로그라 개인 정보가 섞일 수 있어 저장소에 올리지 않음 (.gitignore)
 
 ## 4. 다음 할 일
-1. **미검증: "워치에서 삭제" 토글** — 폰 설정에서 켜고 녹음 → 폰 수신 후 워치 `/sdcard/Recordings/WatchRecorder/`에서 사라지는지, 워치 logcat `ack ...: deleted from watch` 확인
+1. ~~"워치에서 삭제" 토글~~ **검증 완료 (2026-10-22, verification.md)**. 참고로 원래 내용: — 폰 설정에서 켜고 녹음 → 폰 수신 후 워치 `/sdcard/Recordings/WatchRecorder/`에서 사라지는지, 워치 logcat `ack ...: deleted from watch` 확인
 2. 폰 앱 0.4 실사용 피드백 반영 (0.4 화면은 폰이 잠겨 있어 캡처 검증 못 함 — 실행·크래시 없음만 확인)
 3. 장시간 녹음(30분~1시간, 20~30MB) 전송 안정성·소요 시간 측정. 필요하면 진행률 표시
 4. 워치 쪽 대기열 상태 노출(예: 알림/타일에 "폰 전송 대기 N개")
