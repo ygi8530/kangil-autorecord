@@ -17,6 +17,7 @@ HANDOFF의 '다음 할 일' 순서대로 진행하고 검증 결과는 docs/veri
 - 수정 이력: 폰 0.3 삭제 시 크래시 — `createDeleteRequest`에 generic `content://media/external/...` URI를 넘겨 `Invalid Uri`. VOLUME_NAME으로 볼륨별 URI(`external_primary`)를 만들도록 수정, 삭제 실패는 Toast로 처리
 - 폰 0.4 전송 불가 버그: R8 리소스 축소가 `android_wear_capabilities`를 미사용으로 지워 폰이 `watchrecorder_phone` capability를 광고하지 않음 → 워치가 폰을 못 찾고 대기열에만 쌓음. `tools:keep`은 values 파일에선 무시됨 → `res/raw/keep.xml`로 옮겨 해결(0.4.1). release 빌드 후 `aapt2 dump resources ... | grep android_wear_capabilities`로 확인할 것
 - 워치 0.3.1: 재연결 시 즉시 전송(doze 중 job 지연 회피), 동시 sync 1개 제한(중복 전송 제거)
+- 전송 경로: BT가 꺼져도 워치 Wi-Fi + 폰 인터넷이면 Data Layer가 클라우드 경유로 전송함(2026-10-22 확인). 진짜 오프라인→재연결 즉시 전송은 미검증(워치 Wi-Fi도 끄고 테스트 필요)
 
 ## 2. 구조
 ```
