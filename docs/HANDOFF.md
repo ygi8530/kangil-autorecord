@@ -13,8 +13,9 @@ HANDOFF의 '다음 할 일' 순서대로 진행하고 검증 결과는 docs/veri
   - 삼성 Voice Recorder 경유는 불가 확정 (T0: 홈 키 2번 = 삼성 앱 화면만 열림 / S2: 외부 파일 인식·동기화 안 함)
   - Wearable Data Layer로 워치→폰 전송, 끊김 시 대기열 보관 후 재연결 즉시 전송, 폰 저장·크기 확인 후 ack
 - 폰 앱 0.4: iOS 스타일(kangil-train 앱과 같은 inset grouped 디자인) 보관함 — 날짜별/월별/즐겨찾기, 검색, 인라인 재생(속도·10초 이동), 이름·메모·공유·열기·삭제, 오늘 녹음 강조, 당겨서 새로고침, 여러 개 선택(길게 누르기·전체 선택 → 일괄 즐겨찾기·공유·삭제), 설정(워치에서 삭제 토글), 빨강~주황 앱 아이콘(어두운/나무 테마에서 잘 보이게)
-- 버전: 워치 0.3 (versionCode 3), 폰 0.4 (versionCode 4). 설치본: `dist/` (R8 축소 release 빌드, debug 키 서명)
+- 버전: 워치 0.3 (versionCode 3), 폰 0.4.1 (versionCode 5). 설치본: `dist/` (R8 축소 release 빌드, debug 키 서명)
 - 수정 이력: 폰 0.3 삭제 시 크래시 — `createDeleteRequest`에 generic `content://media/external/...` URI를 넘겨 `Invalid Uri`. VOLUME_NAME으로 볼륨별 URI(`external_primary`)를 만들도록 수정, 삭제 실패는 Toast로 처리
+- 폰 0.4 전송 불가 버그: R8 리소스 축소가 `android_wear_capabilities`를 미사용으로 지워 폰이 `watchrecorder_phone` capability를 광고하지 않음 → 워치가 폰을 못 찾고 대기열에만 쌓음. `tools:keep`은 values 파일에선 무시됨 → `res/raw/keep.xml`로 옮겨 해결(0.4.1). release 빌드 후 `aapt2 dump resources ... | grep android_wear_capabilities`로 확인할 것
 
 ## 2. 구조
 ```
